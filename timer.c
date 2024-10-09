@@ -90,9 +90,10 @@ void
 timer_sleep (int64_t ticks) 
 {
   if(ticks < 1){
-    // If ticks to sleep is 0 or negative just return
+    // If ticks to sleep is 0 or negative just return (Invalid entry)
     return;
   }
+  //Check if the interrupt state is on, if not terminate.
   ASSERT (intr_get_level () == INTR_ON);
   //Set nmbr of ticks to sleep in thread
   thread_current()->ticks_to_sleep = ticks;
@@ -100,22 +101,20 @@ timer_sleep (int64_t ticks)
   enum intr_level old_level = intr_disable();
   //Block the thread
   thread_block();
-  //Reset to old interrupt setting
+  //Reset to old interrupt setting (after thread is unblocked by thread_waketick)
   intr_set_level(old_level);
 }
 
-void wake_threads(struct thread *thr, void *aux){
+void thread_waketick(struct thread *thr, void *aux){
   //Function for waking up threads and handling sleep ticks
-  if(thr->status == THREAD_BLOCKED){
-    // Thread blocked?
-    if(thr->ticks_to_sleep > 0){
-      //If there is ticks left to sleep decrease one tick
+  if(thr->status == THREAD_BLOCKED && thr->status > 0){
+    // Thread blocked and sleep ticks left??
+      //Decrement sleep ticks
       thr->ticks_to_sleep--;
-      if(thr->ticks_to_sleep == 0){
-        // Sleep ticks 0? Unblock the thread
-        thread_unblock(thr);
+    if(thr->ticks_to_sleep == 0){
+      // Sleep ticks 0? --> Sleep done, unblock thread (continues execution of timer_sleep)
+      thread_unblock(thr);
       }
-    }
   }
 }
 
@@ -195,7 +194,8 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
-  thread_foreach(wake_threads,0);
+  //Iterratates over all threads and calls thread_waketick for all of them:
+  thread_foreach(thread_waketick,0);
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
