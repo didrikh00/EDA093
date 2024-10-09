@@ -105,10 +105,11 @@ timer_sleep (int64_t ticks)
   intr_set_level(old_level);
 }
 
+/* Wake up blocked threads when their sleep timer is zero. 
+   Handles the sleep time tick decrementing.*/
 void thread_waketick(struct thread *thr, void *aux){
-  //Function for waking up threads and handling sleep ticks
+  // Thread blocked and sleep ticks left??
   if(thr->status == THREAD_BLOCKED && thr->status > 0){
-    // Thread blocked and sleep ticks left??
       //Decrement sleep ticks
       thr->ticks_to_sleep--;
     if(thr->ticks_to_sleep == 0){
