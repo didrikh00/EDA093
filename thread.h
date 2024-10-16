@@ -91,7 +91,7 @@ struct thread
     struct list_elem allelem;           /* List element for all threads list. */
     
     int64_t ticks_to_sleep;            /* Sleep time in ticks, set by timer_sleep, handled by thread_waketick (decrement)*/
-    
+    bool    sleeping;
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 

@@ -97,11 +97,13 @@ timer_sleep (int64_t ticks)
   ASSERT (intr_get_level () == INTR_ON);
   //Set nmbr of ticks to sleep in thread
   thread_current()->ticks_to_sleep = ticks;
+  thread_current()->sleeping = true;
   //Dissable interupts and store old interrupt setting
   enum intr_level old_level = intr_disable();
   //Block the thread
   thread_block();
   //Reset to old interrupt setting (after thread is unblocked by thread_waketick)
+  thread_current()->sleeping = false;
   intr_set_level(old_level);
 }
 
@@ -109,7 +111,7 @@ timer_sleep (int64_t ticks)
    Handles the sleep time tick decrementing.*/
 void thread_waketick(struct thread *thr, void *aux){
   // Thread blocked and sleep ticks left??
-  if(thr->status == THREAD_BLOCKED && thr->status > 0){
+  if(thr->status == THREAD_BLOCKED && thr->ticks_to_sleep > 0 && thr->sleeping == true){
       //Decrement sleep ticks
       thr->ticks_to_sleep--;
     if(thr->ticks_to_sleep == 0){
